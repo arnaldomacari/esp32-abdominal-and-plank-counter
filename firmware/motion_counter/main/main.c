@@ -1,44 +1,74 @@
 #include <stdio.h>
+#include <math.h>
+
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
-#include "driver/i2c_master.h"
+
+#include "led_strip.h"
 #include "esp_log.h"
 
-#define I2C_SDA_GPIO 7
-#define I2C_SCL_GPIO 8
-#define I2C_PORT     I2C_NUM_0
+#define RGB_LED_GPIO 2
+#define RGB_LED_COUNT 1
 
-static const char *TAG = "I2C_SCAN";
+static const char *TAG = "RGB";
+
+static uint32_t wheel(uint8_t pos)
+{
+    pos = 255 - pos;
+
+    if (pos < 85) {
+        return ((255 - pos * 3) << 16) | (0 << 8) | (pos * 3);
+    }
+
+    if (pos < 170) {
+        pos -= 85;
+        return (0 << 16) | ((pos * 3) << 8) | (255 - pos * 3);
+    }
+
+    pos -= 170;
+    return ((pos * 3) << 16) | ((255 - pos * 3) << 8) | 0;
+}
 
 void app_main(void)
 {
-    ESP_LOGI(TAG, "Iniciando scan I2C...");
+    ESP_LOGI(TAG, "Inicializando WS2812...");
 
-    i2c_master_bus_handle_t bus_handle;
+    led_strip_handle_t led_strip;
 
-    i2c_master_bus_config_t bus_config = {
-        .clk_source = I2C_CLK_SRC_DEFAULT,
-        .i2c_port = I2C_PORT,
-        .sda_io_num = I2C_SDA_GPIO,
-        .scl_io_num = I2C_SCL_GPIO,
-        .glitch_ignore_cnt = 7,
-        .flags.enable_internal_pullup = true,
+    led_strip_config_t strip_config = {
+        .strip_gpio_num = RGB_LED_GPIO,
+        .max_leds = RGB_LED_COUNT,
     };
 
-    ESP_ERROR_CHECK(i2c_new_master_bus(&bus_config, &bus_handle));
+    led_strip_rmt_config_t rmt_config = {
+        .clk_src = RMT_CLK_SRC_DEFAULT,
+        .resolution_hz = 10 * 1000 * 1000,
+        .mem_block_symbols = 64,
+    };
+
+    ESP_ERROR_CHECK(
+        led_strip_new_rmt_device(
+            &strip_config,
+            &rmt_config,
+            &led_strip
+        )
+    );
+
+    uint8_t hue = 0;
 
     while (1) {
-        ESP_LOGI(TAG, "Procurando dispositivos I2C...");
 
-        for (uint8_t addr = 1; addr < 127; addr++) {
-            esp_err_t ret = i2c_master_probe(bus_handle, addr, 100);
+        uint32_t color = wheel(hue);
 
-            if (ret == ESP_OK) {
-                ESP_LOGI(TAG, "Dispositivo encontrado em 0x%02X", addr);
-            }
-        }
+        uint8_t r = (color >> 16) & 0xFF;
+        uint8_t g = (color >> 8) & 0xFF;
+        uint8_t b = color & 0xFF;
 
-        ESP_LOGI(TAG, "Scan finalizado.\n");
-        vTaskDelay(pdMS_TO_TICKS(3000));
+        led_strip_set_pixel(led_strip, 0, r, g, b);
+        led_strip_refresh(led_strip);
+
+        hue++;
+
+        vTaskDelay(pdMS_TO_TICKS(20));
     }
 }
