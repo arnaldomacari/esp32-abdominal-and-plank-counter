@@ -1,0 +1,2 @@
+source /home/ajm/Projetos/esp32-abdominal-and-plank-counter/firmware/motion_counter/build/gdbinit/symbols
+source /home/ajm/Projetos/esp32-abdominal-and-plank-counter/firmware/motion_counter/build/gdbinit/connect

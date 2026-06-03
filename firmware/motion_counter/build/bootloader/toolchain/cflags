@@ -1,0 +1,3 @@
+"-specs=/home/ajm/Projetos/esp32-abdominal-and-plank-counter/firmware/motion_counter/build/bootloader/specs/picolibc.specs"
+-march=rv32imc_zicsr_zifencei
+-mtune=esp-base

@@ -63,12 +63,17 @@ tests/      -> test applications
 
 ESP32-C3-DevKit-RUST-2 v1.3a (05/2025)
 
+| Signal | GPIO |
+|---|---|
+| SDA | GPIO7 |
+| SCL | GPIO8 |
+
 Onboard I2C devices:
 
-| Device | Address |
+| Address | Device |
 |---|---|
-| ICM-42670-P | 0x68 |
-| SHTC3 | 0x70 |
+| 0x68 | ICM-42670-P IMU |
+| 0x70 | SHTC3 temperature/humidity sensor |
 
 ## License
 
